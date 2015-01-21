@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+
+		<property name="driverClassName">
+			<value>com.mysql.jdbc.Driver</value>
+		</property>
+
+		<property name="url">
+			<value>jdbc:mysql://localhost:3306/ssh3</value>
+		</property>
+
+		<property name="username">
+			<value>root</value>
+		</property>
+
+		<property name="password">
+			<value>root</value>
+		</property>
+
+	</bean>
+
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+
+		<property name="dataSource">
+			<ref local="dataSource" />
+		</property>
+
+		<property name="mappingResources">
+			<list>
+				<value>com/may/bean/User.hbm.xml</value>
+				<value>com/may/bean/Help.hbm.xml</value>
+			</list>
+		</property>
+
+		<property name="hibernateProperties">
+
+			<props>
+
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.MySQLDialect
+				</prop>
+				<prop key="hibernate.show_sql">true</prop>
+
+				<prop key="hibernate.format_sql">true</prop>
+
+			</props>
+
+		</property>
+
+	</bean>
+
+
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+
+	<bean id="userDao" class="com.may.dao.impl.UserDaoImpl" scope="singleton">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory" />
+		</property>
+	</bean>
+	
+	<bean id="helpDao" class="com.may.dao.impl.HelpDaoImpl" scope="singleton">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory" />
+		</property>
+	</bean>
+
+	<bean id="userServiceTarget" class="com.may.service.impl.UserServiceImpl">
+		<property name="userDao" ref="userDao"></property>
+	</bean>
+	
+	<bean id="helpServiceTarget" class="com.may.service.impl.HelpServiceImpl">
+		<property name="helpDao" ref="helpDao"></property>
+	</bean>
+
+	<bean id="userService"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+
+		<property name="target" ref="userServiceTarget"></property>
+		<property name="transactionManager" ref="transactionManager"></property>
+
+		<property name="transactionAttributes">
+
+			<props>
+				<prop key="find*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+
+		</property>
+	</bean>
+	
+	<bean id="helpService"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+
+		<property name="target" ref="helpServiceTarget"></property>
+		<property name="transactionManager" ref="transactionManager"></property>
+
+		<property name="transactionAttributes">
+
+			<props>
+				<prop key="find*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+
+		</property>
+	</bean>
+
+
+	<bean id="listUserAction" class="com.may.action.user.ListUserAction"
+		scope="prototype">
+		<property name="userService" ref="userService"></property>
+	</bean>
+	
+	<bean id="listHelpAction" class="com.may.action.help.ListHelpAction"
+		scope="prototype">
+		<property name="helpService" ref="helpService"></property>
+	</bean>
+
+</beans>
